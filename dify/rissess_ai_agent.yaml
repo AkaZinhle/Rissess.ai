@@ -1,0 +1,646 @@
+app:
+  description: >-
+    An agentic AI underwriting assistant for business loan and insurance risk
+    assessment. Paste extracted PDF text into the chat. The AI Agent autonomously
+    performs a web-based reputation check via Google Search, consults an internal
+     policy compliance Knowledge Base, and generates a structured Risk Memo.
+  icon: 📋
+  icon_background: '#DBEAFE'
+  mode: advanced-chat
+  name: UnderWrite.AI
+  use_icon_as_answer_icon: false
+dependencies:
+- current_identifier: null
+  type: marketplace
+  value:
+    marketplace_plugin_unique_identifier: langgenius/openai:0.2.10@7ca552fb9e48caa4deddfdef5aa71c200d06d03c26c2e8bb428b3250101b9cb3
+    version: null
+- current_identifier: null
+  type: marketplace
+  value:
+    marketplace_plugin_unique_identifier: langgenius/google:0.0.9@d360bbc433f39be1b11909cb9c32e6be4a17ea06af083f9e1c7613bb802bf517
+    version: null
+kind: app
+version: 0.6.0
+workflow:
+  conversation_variables: []
+  environment_variables: []
+  features:
+    file_upload:
+      allowed_file_extensions:
+      - .JPG
+      - .JPEG
+      - .PNG
+      - .GIF
+      - .WEBP
+      - .SVG
+      allowed_file_types:
+      - image
+      allowed_file_upload_methods:
+      - local_file
+      - remote_url
+      enabled: false
+      fileUploadConfig:
+        attachment_image_file_size_limit: 2
+        audio_file_size_limit: 50
+        batch_count_limit: 5
+        file_size_limit: 15
+        file_upload_limit: 50
+        image_file_batch_limit: 10
+        image_file_size_limit: 10
+        single_chunk_attachment_limit: 10
+        video_file_size_limit: 100
+        workflow_file_upload_limit: 10
+      image:
+        enabled: false
+        number_limits: 3
+        transfer_methods:
+        - local_file
+        - remote_url
+      number_limits: 3
+    opening_statement: >-
+      Welcome to **UnderWrite.AI** 📋
+
+      I am your autonomous AI underwriting analyst. To begin a risk assessment,
+      paste the extracted text from a business loan application or insurance
+      document into the chat.
+
+      I will automatically:
+      - 🔍 Run a web reputation check on the applicant entity
+      - 📚 Cross-reference against internal policy compliance guidelines
+      - ⚠️ Identify key risk factors
+      - 📄 Generate a structured Risk Memo
+    retriever_resource:
+      enabled: true
+    sensitive_word_avoidance:
+      enabled: false
+    speech_to_text:
+      enabled: false
+    suggested_questions:
+    - Analyze this business loan application and assess the risk level.
+    - Perform a full underwriting review on the following insurance application.
+    - What are the compliance gaps in this document based on our policy guidelines?
+    suggested_questions_after_answer:
+      enabled: false
+    text_to_speech:
+      enabled: false
+      language: ''
+      voice: ''
+  graph:
+    edges:
+    - data:
+        isInLoop: false
+        sourceType: start
+        targetType: knowledge-retrieval
+      id: 1759287985001-source-1759287985002-target
+      source: '1759287985001'
+      sourceHandle: source
+      target: '1759287985002'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInLoop: false
+        sourceType: knowledge-retrieval
+        targetType: agent
+      id: 1759287985002-source-1759287985003-target
+      source: '1759287985002'
+      sourceHandle: source
+      target: '1759287985003'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInLoop: false
+        sourceType: agent
+        targetType: llm
+      id: 1759287985003-source-1759287985004-target
+      source: '1759287985003'
+      sourceHandle: source
+      target: '1759287985004'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInLoop: false
+        sourceType: llm
+        targetType: answer
+      id: 1759287985004-source-1759287985005-target
+      source: '1759287985004'
+      sourceHandle: source
+      target: '1759287985005'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    nodes:
+
+    # ── NODE 1: START ────────────────────────────────────────────────────────
+    - data:
+        desc: >-
+          Receives the extracted PDF text from the Streamlit frontend via the
+          Dify Chat-Message API. The full document content is available as
+          sys.query throughout the workflow.
+        selected: false
+        title: Start
+        type: start
+        variables: []
+      height: 53
+      id: '1759287985001'
+      position:
+        x: 50
+        y: 400
+      positionAbsolute:
+        x: 50
+        y: 400
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 243
+
+    # ── NODE 2: KNOWLEDGE RETRIEVAL (Policy Compliance) ──────────────────────
+    - data:
+        dataset_ids:
+        - REPLACE_WITH_YOUR_DIFY_KNOWLEDGE_BASE_ID
+        desc: >-
+          Queries the internal underwriting policy and compliance Knowledge Base
+          to retrieve relevant guidelines, red-flag criteria, and regulatory
+          requirements based on the submitted document content.
+        query_variable_selector:
+        - '1759287985001'
+        - sys.query
+        retrieval_mode: multiple
+        multiple_retrieval_config:
+          reranking_enable: false
+          reranking_mode: null
+          reranking_model:
+            provider: ''
+            model: ''
+          top_k: 5
+          score_threshold: 0.5
+          score_threshold_enabled: true
+        selected: false
+        title: Policy Compliance KB
+        type: knowledge-retrieval
+      dragging: false
+      height: 101
+      id: '1759287985002'
+      position:
+        x: 350
+        y: 400
+      positionAbsolute:
+        x: 350
+        y: 400
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 243
+
+    # ── NODE 3: AGENT (ReAct — Web Reputation Check + Analysis) ─────────────
+    - data:
+        agent_parameters:
+          instruction:
+            type: constant
+            value: |
+              # Role: UnderWrite.AI Risk Analysis Agent
+
+              You are an expert AI underwriting analyst specialising in business loans and commercial insurance. Your task is to perform a thorough autonomous risk assessment on the document provided by the user.
+
+              ---
+
+              ## INTERNAL POLICY & COMPLIANCE GUIDELINES
+              The following guidelines have been retrieved from the internal underwriting Knowledge Base. Use these as your compliance benchmark:
+
+              {{#1759287985002.result#}}
+
+              ---
+
+              ## YOUR AVAILABLE TOOL
+              - **Google Search** — Use this to perform web-based reputation and background checks. You MUST run at least 2-3 targeted searches.
+
+              ---
+
+              ## STEP-BY-STEP ANALYSIS PROTOCOL
+
+              ### Step 1 — Document Parsing
+              Read the full document text (below in the user query). Extract and note:
+              - Applicant entity name (company or individual)
+              - Directors, owners, or key stakeholders named
+              - Loan amount or coverage amount requested
+              - Business type and industry sector
+              - Jurisdiction / registered address
+              - Financial figures mentioned (revenue, assets, liabilities)
+              - Purpose of loan or nature of coverage sought
+
+              ### Step 2 — Web Reputation Check (MANDATORY — use Google Search)
+              For each extracted entity (company + key individuals), run targeted searches:
+              1. "[Company Name] legal issues OR fraud OR regulatory action OR lawsuit"
+              2. "[Company Name] reviews OR BBB rating OR complaints"
+              3. "[Director/Owner Name] criminal record OR disqualification OR insolvency"
+              4. "[Industry] regulatory requirements [Jurisdiction]" (for compliance benchmarking)
+
+              Record the key findings from each search. Do NOT fabricate results — only report what the tool returns.
+
+              ### Step 3 — Policy Compliance Cross-Reference
+              Compare the document details against the Internal Policy & Compliance Guidelines above. Flag any:
+              - Missing mandatory documentation
+              - Financial ratios or thresholds that breach policy limits
+              - Industry sectors flagged as high-risk or excluded
+              - Regulatory or licensing requirements not evidenced in the document
+
+              ### Step 4 — Risk Factor Synthesis
+              Consolidate all findings into a structured list of risk factors, tagging each as:
+              - 🔴 HIGH RISK
+              - 🟡 MEDIUM RISK
+              - 🟢 LOW RISK / ACCEPTABLE
+
+              ---
+
+              ## STRICT RULES
+              - Never fabricate financial data, legal findings, or compliance rules not present in your tools or the document.
+              - If a search returns no relevant results, state this explicitly.
+              - If the document is incomplete or ambiguous, flag it as a risk factor.
+              - This output is a preliminary analysis only — always recommend human review for final decisions.
+
+              ---
+
+              ## DOCUMENT TEXT TO ANALYSE
+              {{#sys.query#}}
+          maximum_iterations:
+            type: constant
+            value: 5
+          model:
+            type: constant
+            value:
+              completion_params:
+                max_tokens: 8192
+                temperature: 0.2
+              mode: chat
+              model: gpt-4o
+              model_type: llm
+              provider: langgenius/openai/openai
+              type: model-selector
+          query:
+            type: constant
+            value: '{{#sys.query#}}'
+          tools:
+            type: constant
+            value:
+            - enabled: true
+              extra:
+                description: >-
+                  A tool for performing a Google SERP search and extracting
+                  snippets and webpages. Input should be a search query.
+              parameters:
+                country_code:
+                  auto: 1
+                  value: null
+                language_code:
+                  auto: 1
+                  value: null
+                query:
+                  auto: 1
+                  value: null
+              provider_name: langgenius/google/google
+              provider_show_name: langgenius/google/google
+              schemas:
+              - auto_generate: null
+                default: null
+                form: llm
+                human_description:
+                  en_US: used for searching
+                  ja_JP: used for searching
+                  pt_BR: used for searching
+                  zh_Hans: 用于搜索网页内容
+                label:
+                  en_US: Query string
+                  ja_JP: Query string
+                  pt_BR: Query string
+                  zh_Hans: 查询语句
+                llm_description: keywords for searching
+                max: null
+                min: null
+                name: query
+                options: []
+                placeholder: null
+                precision: null
+                required: true
+                scope: null
+                template: null
+                type: string
+              - auto_generate: null
+                default: null
+                form: llm
+                human_description:
+                  en_US: >-
+                    Parameter defines the language to use for the Google search.
+                    It's a two-letter language code. (e.g., en for English, es
+                    for Spanish, or fr for French).
+                  ja_JP: >-
+                    Parameter defines the language to use for the Google search.
+                    It's a two-letter language code. (e.g., en for English, es
+                    for Spanish, or fr for French).
+                  pt_BR: >-
+                    Parameter defines the language to use for the Google search.
+                    It's a two-letter language code. (e.g., en for English, es
+                    for Spanish, or fr for French).
+                  zh_Hans: >-
+                    此参数定义用于 Google 搜索的语言。它是一个两字母的语言代码。
+                    (例如，en 代表英语，es 代表西班牙语，fr 代表法语)。
+                label:
+                  en_US: Language code
+                  ja_JP: Language code
+                  pt_BR: Language code
+                  zh_Hans: 语言代码
+                llm_description: >-
+                  (Optional) This parameter specifies the language used for
+                  Google searches. Some effective examples: en, es, fr, ja.
+                max: null
+                min: null
+                name: language_code
+                options: []
+                placeholder: null
+                precision: null
+                required: false
+                scope: null
+                template: null
+                type: string
+              - auto_generate: null
+                default: null
+                form: llm
+                human_description:
+                  en_US: >-
+                    Parameter defines the country to use for the Google search.
+                    It's a two-letter country code. (e.g., us for the United
+                    States, uk for United Kingdom, or fr for France).
+                  ja_JP: >-
+                    Parameter defines the country to use for the Google search.
+                    It's a two-letter country code. (e.g., us for the United
+                    States, uk for United Kingdom, or fr for France).
+                  pt_BR: >-
+                    Parameter defines the country to use for the Google search.
+                    It's a two-letter country code. (e.g., us for the United
+                    States, uk for United Kingdom, or fr for France).
+                  zh_Hans: >-
+                    此参数定义用于 Google 搜索的国家。它是一个两字母的国家代码。
+                    (例如，us 代表美国，uk 代表英国，fr 代表法国)。
+                label:
+                  en_US: Country code
+                  ja_JP: Country code
+                  pt_BR: Country code
+                  zh_Hans: 国家代码
+                llm_description: >-
+                  (Optional) This parameter defines the country used for Google
+                  search. Some effective examples: us, uk, ca, au.
+                max: null
+                min: null
+                name: country_code
+                options: []
+                placeholder: null
+                precision: null
+                required: false
+                scope: null
+                template: null
+                type: string
+              - auto_generate: null
+                default: false
+                form: form
+                human_description:
+                  en_US: >-
+                    Default is False. Enable this when using Google Search
+                    inside an Agent node to get optimised Agent-mode output
+                    formatting.
+                  ja_JP: >-
+                    Default is False. Enable this when using Google Search
+                    inside an Agent node to get optimised Agent-mode output
+                    formatting.
+                  pt_BR: >-
+                    Default is False. Enable this when using Google Search
+                    inside an Agent node to get optimised Agent-mode output
+                    formatting.
+                  zh_Hans: >-
+                    默认为 False。在 Agent 节点中使用时启用，以获得优化的 Agent 模式输出格式。
+                label:
+                  en_US: Used in Agent nodes
+                  ja_JP: Used in Agent nodes
+                  pt_BR: Used in Agent nodes
+                  zh_Hans: 在 Agent 节点中使用
+                llm_description: >-
+                  Default is False. Set to true when using this tool inside an
+                  Agent node for optimised context formatting.
+                max: null
+                min: null
+                name: as_agent_tool
+                options: []
+                placeholder: null
+                precision: null
+                required: false
+                scope: null
+                template: null
+                type: boolean
+              settings:
+                as_agent_tool:
+                  value:
+                    type: constant
+                    value: true
+              tool_description: >-
+                A tool for performing a Google SERP search and extracting
+                snippets and webpages. Input should be a search query.
+              tool_label: GoogleSearch
+              tool_name: google_search
+              type: builtin
+        agent_strategy_label: FunctionCalling
+        agent_strategy_name: function_calling
+        agent_strategy_provider_name: langgenius/agent/agent
+        desc: >-
+          The ReAct Agent. Autonomously extracts entities from the document,
+          performs targeted Google searches for reputation and regulatory
+          checks, and cross-references findings against the retrieved policy
+          compliance context.
+        memory:
+          query_prompt_template: '{{#sys.query#}}'
+          window:
+            enabled: false
+            size: 50
+        meta:
+          minimum_dify_version: 1.7.0
+          version: 0.0.2
+        output_schema: {}
+        plugin_unique_identifier: langgenius/agent:0.0.25@3507a9a417ea8d76e5de6b2803953ca891851b6b336fafe1315471782711730f
+        selected: false
+        title: Risk Analysis Agent
+        tool_node_version: '2'
+        type: agent
+      height: 80
+      id: '1759287985003'
+      position:
+        x: 650
+        y: 400
+      positionAbsolute:
+        x: 650
+        y: 400
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 243
+
+    # ── NODE 4: LLM — RISK MEMO SYNTHESIZER ─────────────────────────────────
+    - data:
+        context:
+          enabled: true
+          variable_selector:
+          - '1759287985003'
+          - text
+        desc: >-
+          Receives the agent's raw analysis findings and synthesises them into
+          a clean, professionally formatted Risk Memo document ready for
+          underwriter review.
+        memory:
+          role_prefix:
+            assistant: ''
+            user: ''
+          window:
+            enabled: false
+            size: 50
+        model:
+          completion_params:
+            max_tokens: 4096
+            temperature: 0.1
+          mode: chat
+          name: gpt-4o
+          provider: langgenius/openai/openai
+        prompt_template:
+        - id: underwrite-system-prompt
+          role: system
+          text: |
+            You are a Senior Underwriting Analyst at a financial institution. Your task is to take the raw analysis findings provided and reformat them into a clean, professional, and structured Risk Memo.
+
+            The Risk Memo must follow this EXACT format and use Markdown:
+
+            ---
+
+            # 📋 UNDERWRITE.AI — RISK ASSESSMENT MEMO
+
+            **Assessment Date:** [Today's date]
+            **Document Type:** [Loan Application / Insurance Application — infer from context]
+            **Risk Level:** [🔴 HIGH / 🟡 MEDIUM / 🟢 LOW — determine from findings]
+
+            ---
+
+            ## 1. APPLICANT SUMMARY
+            | Field | Details |
+            |---|---|
+            | Entity Name | |
+            | Business Type | |
+            | Jurisdiction | |
+            | Request Amount | |
+            | Key Stakeholders | |
+
+            ---
+
+            ## 2. WEB REPUTATION FINDINGS
+            *(Summarise all Google Search results here. Include source snippets where available. Mark each finding as ✅ Clear, ⚠️ Caution, or 🚨 Red Flag.)*
+
+            ---
+
+            ## 3. POLICY COMPLIANCE ASSESSMENT
+            *(List each policy requirement retrieved from the Knowledge Base and whether the document satisfies it: ✅ Compliant, ⚠️ Partial, or ❌ Non-Compliant.)*
+
+            ---
+
+            ## 4. IDENTIFIED RISK FACTORS
+            *(Bulleted list. Tag each: 🔴 HIGH / 🟡 MEDIUM / 🟢 LOW)*
+
+            ---
+
+            ## 5. UNDERWRITER RECOMMENDATION
+            **Decision:** [APPROVE / REFER FOR MANUAL REVIEW / DECLINE — based on findings]
+
+            **Rationale:** [2-3 sentences explaining the recommendation]
+
+            **Conditions / Next Steps:** [List any conditions for approval or additional documentation required]
+
+            ---
+
+            ## ⚠️ DISCLAIMER
+            *This memo is generated by an AI system (UnderWrite.AI) and constitutes a preliminary automated assessment only. It does not constitute a final credit or underwriting decision. All outputs must be reviewed and approved by a qualified human underwriter before any action is taken. AI-generated findings may be incomplete or contain errors.*
+
+            ---
+
+            RULES:
+            - Populate every section using ONLY the information provided in the agent analysis below.
+            - Do not fabricate data points, financial figures, or legal findings.
+            - If a section has no relevant data from the analysis, write "No data retrieved — manual verification required."
+            - Use professional, formal language throughout.
+            - The final output must be clean Markdown suitable for display in a web application.
+        - id: underwrite-user-prompt
+          role: user
+          text: |
+            Please compile the following raw analysis findings into a professional Risk Memo:
+
+            ## RAW AGENT ANALYSIS:
+            {{#1759287985003.text#}}
+
+            ---
+
+            ## ORIGINAL DOCUMENT EXCERPT (for reference):
+            {{#sys.query#}}
+        reasoning_format: no_reasoning
+        selected: false
+        title: Risk Memo Synthesizer
+        type: llm
+        variables: []
+        vision:
+          enabled: false
+      dragging: false
+      height: 98
+      id: '1759287985004'
+      position:
+        x: 950
+        y: 400
+      positionAbsolute:
+        x: 950
+        y: 400
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 243
+
+    # ── NODE 5: ANSWER ───────────────────────────────────────────────────────
+    - data:
+        answer: '{{#1759287985004.text#}}'
+        desc: >-
+          Returns the final, formatted Risk Memo to the user via the Dify
+          Chat-Message API. The Streamlit frontend will render this as
+          Markdown.
+        selected: false
+        title: Risk Memo Output
+        type: answer
+        variables:
+        - value_selector:
+          - '1759287985004'
+          - text
+          variable: text
+      dragging: false
+      height: 105
+      id: '1759287985005'
+      position:
+        x: 1250
+        y: 400
+      positionAbsolute:
+        x: 1250
+        y: 400
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 243
+
+    viewport:
+      x: -100
+      y: 100
+      zoom: 0.85
+  rag_pipeline_variables: []
