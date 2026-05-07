@@ -37,69 +37,6 @@ UnderWrite.AI is a portfolio-grade agentic application that demonstrates end-to-
 - **Session-scoped state** — UUID-keyed `st.session_state` prevents state bleed across Streamlit reruns
 - Download-ready Risk Memo output as `.md`
 
----
-
-## Architecture Diagram
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    Streamlit Frontend                        │
-│  PDF Upload → Text Extract → API Call → Streaming Display   │
-└────────────────────────┬────────────────────────────────────┘
-                         │ POST /v1/chat-messages (SSE)
-                         ▼
-┌─────────────────────────────────────────────────────────────┐
-│                  dify_client.py (API Bridge)                 │
-│  DifyClient → SessionManager → SSE Event Router             │
-└────────────────────────┬────────────────────────────────────┘
-                         │
-                         ▼
-┌─────────────────────────────────────────────────────────────┐
-│              Dify Agentic Workflow (underwrite_ai_agent.yaml)│
-│                                                              │
-│  [Start] → [Policy KB] → [ReAct Agent] → [LLM Memo] → [Out]│
-│                               │                              │
-│                    ┌──────────┴──────────┐                  │
-│                    ▼                     ▼                   │
-│             Google Search         Knowledge Base             │
-│           (Reputation Check)    (Policy Compliance)          │
-└─────────────────────────────────────────────────────────────┘
-```
-
----
-
-## Tech Stack
-
-| Layer | Technology | Purpose |
-|---|---|---|
-| Agent Orchestration | [Dify.ai](https://dify.ai) | Agentic workflow, RAG pipeline, tool routing |
-| Agent Brain | GPT-4o (OpenAI) | ReAct reasoning, memo synthesis |
-| Web Research | Google Search (SerpAPI) | Live reputation & regulatory checks |
-| Policy Compliance | Dify Knowledge Base | RAG over internal underwriting guidelines |
-| API Bridge | Python / Requests | SSE streaming, session management, retry logic |
-| Frontend | Streamlit | PDF upload, live streaming UI |
-| PDF Extraction | pdfplumber / PyPDF2 | Text extraction from uploaded documents |
-
----
-
-## Project Structure
-
-```
-underwrite-ai/
-│
-├── .env.example                    # API key template (safe to commit)
-├── .gitignore                      # Protects secrets, venv, uploads
-├── requirements.txt                # All Python dependencies
-│
-├── dify/
-│   └── underwrite_ai_agent.yaml   # Dify workflow — import this into Dify
-│
-└── streamlit_app/
-    ├── app.py                      # Streamlit UI & PDF processing
-    └── dify_client.py              # Dify API bridge (streaming + sessions)
-```
-
----
 
 ## Getting Started
 
@@ -178,33 +115,6 @@ python dify_client.py
 6. **Synthesise** — A dedicated LLM node reformats the agent's raw findings into a structured 5-section Risk Memo
 7. **Stream** — The memo streams back to the UI in real time via SSE. The user sees the agent's reasoning steps and the final memo building live
 8. **Download** — The completed memo can be downloaded as a `.md` file
-
----
-
-## Security Notes
-
-- **No hardcoded credentials** — all API keys are loaded via `python-dotenv` from `.env`
-- **`.env` is gitignored** — the `.gitignore` explicitly excludes all `.env` files and `secrets.toml`
-- **No PDF persistence** — uploaded documents are held in memory only and never written to disk
-- **No user data logging** — the `DifyClient` does not log query content; only metadata (message ID, token count) is logged at INFO level
-- **Session isolation** — each browser session receives a UUID-scoped `user_id`; conversation histories are not shared between sessions
-
----
-
-## Concepts Demonstrated
-
-This project was built to demonstrate the following to potential employers and collaborators:
-
-- **Agentic AI Systems** — building workflows where the AI autonomously selects tools, sequences reasoning steps, and determines when it has enough information to respond
-- **RAG Pipeline Architecture** — decoupling retrieval strategy (agent) from response synthesis (LLM) to improve grounding and reduce hallucination
-- **Production API Design** — typed exceptions, retry logic, streaming SSE clients, and singleton patterns compatible with Streamlit's execution model
-- **Full-Stack AI Integration** — connecting a local Python frontend to a cloud AI orchestration platform via a well-abstracted API layer
-- **Security-First Development** — zero hardcoded secrets, explicit gitignore rules, in-memory-only data handling
-
----
-
-## License
-
 MIT License — see `LICENSE` for details.
 
 ---
